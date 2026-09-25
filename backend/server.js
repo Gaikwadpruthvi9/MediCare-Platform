@@ -94,3 +94,12 @@ app.put("/api/service-appointments/:id", serviceAppointmentController.updateServ
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`MediCare backend server running on port ${PORT}`);
 });
+
+if (Number(PORT) !== 5000 && !process.env.RENDER) {
+  try {
+    const s5000 = app.listen(5000, "0.0.0.0", () => {
+      console.log(`MediCare backend also listening on port 5000`);
+    });
+    s5000.on("error", () => {});
+  } catch (err) {}
+}
