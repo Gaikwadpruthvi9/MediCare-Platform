@@ -1,3 +1,7 @@
+const mongoose = require("mongoose");
+
+const appointmentSchema = new mongoose.Schema(
+  {
     patientName: { type: String, required: true, trim: true },
     mobile: { type: String, required: true, trim: true },
     age: { type: Number, default: null },
@@ -49,4 +53,9 @@
       meta: { type: mongoose.Schema.Types.Mixed, default: {} },
     },
     sessionId: { type: String, default: null, index: true },
-    paidAt: { type: Date, default: null }, 
+    paidAt: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Appointment", appointmentSchema);
