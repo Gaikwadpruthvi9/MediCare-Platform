@@ -11,8 +11,24 @@ const serviceAppointmentController = require("./controllers/serviceAppointmentCo
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Middleware
-app.use(cors());
+// Middleware - permissive CORS for both local development and live deployments
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "token",
+      "atoken",
+      "dtoken",
+      "aToken",
+      "dToken",
+      "X-Requested-With",
+    ],
+  })
+);
+app.options("*", cors());
 app.use(express.json());
 
 // MongoDB connection
