@@ -1,3 +1,10 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
+import { Calendar, Search, X } from "lucide-react";
+import { listPageStyles } from "../../assets/dummyStyles";
+
+const API_BASE = "http://localhost:4000";
+
 function parseDateTime(date, time) {
   return new Date(`${date}T${time}:00`);
 }
@@ -293,6 +300,7 @@ function RescheduleButton({ appointment, onReschedule }) {
   );
 }
 
+export default function ListPage() {
   const [appointments, setAppointments] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -454,27 +462,137 @@ function RescheduleButton({ appointment, onReschedule }) {
       );
   }, [appointments, search, statusFilter]);
 
+  return (
+    <div className={listPageStyles.pageContainer}>
+      <div className={listPageStyles.contentWrapper}>
+        <div className={listPageStyles.headerContainer}>
+          <div>
+            <h1 className={listPageStyles.headerTitle}>Doctor Appointments</h1>
+            <p className={listPageStyles.headerSubtitle}>
+              Manage and view all your patient consultations and schedules
+            </p>
+          </div>
+
+          <div className={listPageStyles.searchFilterContainer}>
+            <div className={listPageStyles.searchContainer}>
+              <div className={listPageStyles.searchIconContainer}>
+                <Search className={listPageStyles.searchIcon} />
+              </div>
+              <input
+                type="text"
+                placeholder="Search patient name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className={listPageStyles.searchInput}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className={listPageStyles.clearSearchButton}
+                >
+                  <X className={listPageStyles.clearSearchIcon} />
+                </button>
+              )}
+            </div>
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className={listPageStyles.statusFilter}
               title="Filter by status"
             >
-              <option value="">All</option>
+              <option value="">All Statuses</option>
               <option value="complete">Completed</option>
               <option value="cancelled">Cancelled</option>
               <option value="rescheduled">Rescheduled</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
             </select>
+          </div>
+        </div>
 
+        {loading ? (
+          <div className={listPageStyles.loadingContainer}>
+            Loading appointments...
+          </div>
+        ) : error ? (
+          <div className={listPageStyles.errorContainer}>{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No appointments found.
+          </div>
+        ) : (
+          <div className={listPageStyles.appointmentsGrid}>
+            {filtered.map((a) => (
+              <div key={a.id} className={listPageStyles.appointmentCard}>
+                <div className={listPageStyles.cardHeader}>
+                  <div className={listPageStyles.cardAvatar}>
+                    {a.doctorImage ? (
+                      <img
+                        src={a.doctorImage}
+                        alt={a.patient}
+                        className={listPageStyles.cardAvatarImage}
+                      />
+                    ) : (
+                      <span className={listPageStyles.cardAvatarFallback}>
+                        {a.patient?.charAt(0) || "P"}
+                      </span>
+                    )}
+                  </div>
+                  <div className={listPageStyles.cardContent}>
+                    <h3 className={listPageStyles.cardPatientName}>
+                      {a.patient}
+                    </h3>
+                    <p className={listPageStyles.cardPatientInfo}>
+                      {a.age ? `Age: ${a.age}` : ""} {a.gender ? `• ${a.gender}` : ""}
+                    </p>
+                    <p className={listPageStyles.cardSpeciality}>
+                      {a.speciality || "General"}
+                    </p>
+                  </div>
+                </div>
 
-    <div className={listPageStyles.dateTimeSection}>
+                <div className={listPageStyles.dateTimeSection}>
                   <div className={listPageStyles.dateTimeContainer}>
                     <Calendar className={listPageStyles.calendarIcon} />
                     <span className={listPageStyles.dateText}>
                       {formatDate(a.date)}
                     </span>
-                    <span className=" sm:inline">:</span>
+                    <span className="sm:inline">:</span>
                     <span>{formatTimeAMPM(a.time)}</span>
                   </div>
                   <div className={listPageStyles.feeText}>₹{a.fee}</div>
                 </div>
+
+                <div className={listPageStyles.contactStatusSection}>
+                  {a.mobile && (
+                    <div className={listPageStyles.phoneContainer}>
+                      <span className={listPageStyles.phoneNumber}>
+                        📞 {a.mobile}
+                      </span>
+                    </div>
+                  )}
+                  <div className={listPageStyles.statusContainer}>
+                    <StatusBadge status={a.status} />
+                    <StatusSelect
+                      appointment={a}
+                      onChange={(newSt) => updateStatus(a.id, newSt)}
+                    />
+                  </div>
+                </div>
+
+                <RescheduleButton
+                  appointment={a}
+                  onReschedule={(newDate, newTime) =>
+                    updateDateTime(a.id, newDate, newTime)
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -10,7 +10,7 @@ import {
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import toast, { Toaster } from "react-hot-toast";
-import { serviceDetailStyles, iconSize } from "../assets/dummyStyles";
+import { serviceDetailStyles, iconSize } from "../../assets/dummyStyles";
 
 const DEFAULT_HOST = "http://localhost:4000".replace(/\/$/, "");
 
@@ -132,7 +132,9 @@ export default function ServiceDetail() {
         lastError,
       );
       const local =
-        servicesData && servicesData.find((s) => String(s.id) === String(id));
+        typeof servicesData !== "undefined" && servicesData
+          ? servicesData.find((s) => String(s.id) === String(id))
+          : null;
       if (local) {
         const cloned = JSON.parse(JSON.stringify(local));
         if (

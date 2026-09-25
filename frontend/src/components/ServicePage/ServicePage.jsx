@@ -1,111 +1,68 @@
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { servicePageStyles, serviceCardStyles } from "../../assets/dummyStyles";
+
+const API_BASE = "http://localhost:4000";
 const PlaceholderImg = "/placeholder-service.jpg";
 
-const ServiceCard = ({ service }) => {
-  const hasSrcSet =
-    !!service.imageSrcSet ||
-    (!!service.imageSmall && !!service.imageMedium && !!service.imageLarge);
-
+export const ServiceCard = ({ service }) => {
   const src = service.imageUrl || service.image || service.imageSmall || "";
-  const srcSet =
-    service.imageSrcSet ||
-    (service.imageSmall || service.image
-      ? `${service.imageSmall || src} 480w, ${
-          service.imageMedium || src
-        } 768w, ${service.imageLarge || src} 1200w`
-      : null);
-
-  const name = service.name || "Service";
-  const shortDescription = service.shortDescription || service.about || "";
+  const name = service.name || "Medical Service";
+  const shortDescription = service.shortDescription || service.about || "Comprehensive healthcare service and specialized diagnostics.";
 
   return (
     <div className={serviceCardStyles.card}>
-      <div className={serviceCardStyles.imageContainer} aria-hidden="true">
-        {hasSrcSet ? (
-          <picture className={serviceCardStyles.picture}>
-            {service.imageWebp && (
-              <source srcSet={service.imageWebp} type="image/webp" />
-            )}
-            {service.imageSrcSet ? (
-              <img
-                src={src || PlaceholderImg}
-                srcSet={service.imageSrcSet}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                alt={name}
-                loading="lazy"
-                decoding="async"
-                className={serviceCardStyles.responsiveImage}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = PlaceholderImg;
-                }}
-              />
-            ) : (
-              <img
-                src={src || PlaceholderImg}
-                srcSet={srcSet || undefined}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                alt={name}
-                loading="lazy"
-                decoding="async"
-                className={serviceCardStyles.responsiveImage}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = PlaceholderImg;
-                }}
-              />
-            )}
-          </picture>
-        ) : (
-          <img
-            src={src || PlaceholderImg}
-            alt={name}
-            loading="lazy"
-            decoding="async"
-            className={serviceCardStyles.fallbackImage}
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = PlaceholderImg;
-            }}
-          />
-        )}
+      <div className={serviceCardStyles.imageContainer}>
+        <img
+          src={src || PlaceholderImg}
+          alt={name}
+          loading="lazy"
+          className={serviceCardStyles.responsiveImage}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = PlaceholderImg;
+          }}
+        />
       </div>
 
-      <div className={serviceCardStyles.content}>
-        <h3 className={serviceCardStyles.serviceName}>{name}</h3>
+      <div className="p-5 font-serif flex flex-col justify-between flex-1">
+        <div>
+          <h3 className="text-xl font-bold text-emerald-900 mb-2">{name}</h3>
+          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+            {shortDescription}
+          </p>
+        </div>
 
-        <div className={serviceCardStyles.buttonContainer}>
-          {service.available ? (
-            <Link
-              to={`/services/${service.id}`}
-              state={{ service: service.raw || service }}
-              className={serviceCardStyles.buttonAvailable}
-              aria-label={`Book ${name}`}
-            >
-              <ChevronsRight className="w-5 h-5" aria-hidden="true" />
-              Book Now
-            </Link>
-          ) : (
-            <button
-              disabled
-              className={serviceCardStyles.buttonUnavailable}
-              aria-label={`${name} not available`}
-            >
-              <MousePointer2Off className="w-5 h-5" aria-hidden="true" />
-              Not Available
-            </button>
-          )}
+        <div>
+          <div className="flex items-center justify-between pt-3 border-t border-emerald-100 mb-4">
+            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
+              Fee
+            </span>
+            <span className="text-xl font-bold text-emerald-800">
+              ₹{service.price}
+            </span>
+          </div>
+
+          <Link
+            to={`/services/${service.id}`}
+            className="w-full py-2.5 px-4 rounded-full bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md transition-all duration-300"
+          >
+            <span>Book Service</span>
+            <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
     </div>
   );
 };
 
-  const API_BASE = "http://localhost:4000";
+export default function ServicePage({ previewCount }) {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadServices() {
+  const loadServices = async () => {
     setLoading(true);
     setError("");
     try {
@@ -117,7 +74,6 @@ const ServiceCard = ({ service }) => {
           (json && json.message) || `Failed to load services (${res.status})`;
         setError(msg);
         setServices([]);
-        setLoading(false);
         return;
       }
 
@@ -134,15 +90,10 @@ const ServiceCard = ({ service }) => {
 
         return {
           id,
-          name: s.name || "Service",
+          name: s.name || "Medical Service",
           shortDescription: s.shortDescription || s.about || "",
           image,
-          imageSmall: s.imageSmall || null,
-          imageMedium: s.imageMedium || null,
-          imageLarge: s.imageLarge || null,
-          imageSrcSet: s.imageSrcSet || null,
-          imageWebp: s.imageWebp || null,
-          price: s.price ?? s.fee ?? 0,
+          price: s.price ?? s.fee ?? 499,
           available,
           raw: s,
         };
@@ -156,10 +107,71 @@ const ServiceCard = ({ service }) => {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     loadServices();
-  }, [API_BASE]);
+  }, []);
 
-  const shown = services.slice(0, previewCount);
+  const shown = previewCount ? services.slice(0, previewCount) : services;
+
+  return (
+    <div className={servicePageStyles.pageContainer}>
+      <div className={servicePageStyles.maxWidthContainer}>
+        <div className={servicePageStyles.header}>
+          <h1 className={servicePageStyles.title}>Our Healthcare Services</h1>
+          <p className={servicePageStyles.subtitle}>
+            Explore our state-of-the-art diagnostic packages, clinical tests, and preventative health checkups
+          </p>
+        </div>
+
+        {error && (
+          <div className={servicePageStyles.errorContainer}>
+            <p className={servicePageStyles.errorText}>{error}</p>
+            <button
+              type="button"
+              onClick={loadServices}
+              className={servicePageStyles.retryButton}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className={servicePageStyles.skeletonGrid}>
+            {Array.from({ length: previewCount || 4 }).map((_, i) => (
+              <div key={i} className={servicePageStyles.skeletonCard}>
+                <div className={servicePageStyles.skeletonImage} />
+                <div className={servicePageStyles.skeletonText1} />
+                <div className={servicePageStyles.skeletonText2} />
+                <div className={servicePageStyles.skeletonButton} />
+              </div>
+            ))}
+          </div>
+        ) : shown.length === 0 ? (
+          <div className={servicePageStyles.emptyState}>
+            No healthcare services available right now. Please check back later.
+          </div>
+        ) : (
+          <div className={servicePageStyles.servicesGrid}>
+            {shown.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
+          </div>
+        )}
+
+        {previewCount && services.length > previewCount && (
+          <div className="flex justify-center mt-10">
+            <Link
+              to="/services"
+              className="px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md transition-all duration-300"
+            >
+              View All Services
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

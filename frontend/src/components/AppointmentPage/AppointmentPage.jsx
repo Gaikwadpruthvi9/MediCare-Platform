@@ -1,3 +1,25 @@
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
+import {
+  CalendarDays,
+  Clock,
+  CreditCard,
+  Wallet,
+  CheckCircle,
+  Bell,
+  XCircle,
+} from "lucide-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import axios from "axios";
+import {
+  appointmentPageStyles,
+  cardStyles,
+  badgeStyles,
+  iconSize,
+} from "../../assets/dummyStyles";
+
+const API = axios.create({ baseURL: "http://localhost:4000" });
+
 function pad(n) {
   return String(n ?? 0).padStart(2, "0");
 }
@@ -124,6 +146,7 @@ const StatusBadge = ({ itemStatus }) => {
   );
 };
 
+export default function AppointmentPage() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
 
@@ -448,47 +471,125 @@ const StatusBadge = ({ itemStatus }) => {
       .map((x) => ({ ...x, status: computeStatus(x) }));
   }, [serviceAppts]);
 
+  return (
+    <div className={appointmentPageStyles.pageContainer}>
+      <div className={appointmentPageStyles.maxWidthContainer}>
+        {/* Doctor Appointments */}
+        <h2 className={appointmentPageStyles.doctorTitle}>Doctor Appointments</h2>
 
+        {loadingDoctors ? (
+          <div className={appointmentPageStyles.loadingText}>
+            Loading doctor appointments...
+          </div>
+        ) : appointmentData.length === 0 ? (
+          <div className={appointmentPageStyles.emptyStateText}>
+            No doctor appointments found.
+          </div>
+        ) : (
+          <div className={appointmentPageStyles.doctorGrid}>
+            {appointmentData.map((item) => (
+              <div key={item.id} className={cardStyles.doctorCard}>
+                <div className={cardStyles.doctorImageContainer}>
+                  <img
                     src={item.image || "/placeholder-doctor.png"}
-   
-
-  <div className={appointmentPageStyles.serviceGrid}>
-          {serviceData.map((srv) => (
-            <div key={srv.id} className={cardStyles.serviceCard}>
-              <div className={cardStyles.serviceImageContainer}>
-                <img
-                  src={srv.image || "/placeholder-service.png"}
-                  alt={srv.name}
-                  className={cardStyles.image}
-                  loading="lazy"
-                />
-              </div>
-
-              <h3 className={cardStyles.serviceName}>{srv.name}</h3>
-
-              <p className={cardStyles.price}>₹{srv.price}</p>
-
-              <p className={cardStyles.serviceDateContainer}>
-                <CalendarDays className={iconSize.medium} /> {srv.date}
-              </p>
-
-              <p className={cardStyles.serviceTimeContainer}>
-                <Clock className={iconSize.medium} /> {srv.time}
-              </p>
-
-              <div className={cardStyles.badgesContainer}>
-                <PaymentBadge payment={srv.payment} />
-                <StatusBadge itemStatus={srv.status} />
-              </div>
-
-              {srv.status === "Rescheduled" && srv.rescheduledTo ? (
-                <div className={cardStyles.serviceRescheduledText}>
-                  Rescheduled to{" "}
-                  <span className={cardStyles.rescheduledSpan}>
-                    {srv.rescheduledTo.date} : {srv.rescheduledTo.time}
-                  </span>
+                    alt={item.doctor}
+                    className={cardStyles.image}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/placeholder-doctor.png";
+                    }}
+                  />
                 </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
+
+                <h3 className={cardStyles.doctorName}>{item.doctor}</h3>
+                <p className={cardStyles.specialization}>{item.specialization}</p>
+
+                <div className={cardStyles.dateContainer}>
+                  <CalendarDays className={iconSize.medium} />
+                  <span>{item.date}</span>
+                </div>
+
+                <div className={cardStyles.timeContainer}>
+                  <Clock className={iconSize.medium} />
+                  <span>{item.time}</span>
+                </div>
+
+                <div className={cardStyles.badgesContainer}>
+                  <PaymentBadge payment={item.payment} />
+                  <StatusBadge itemStatus={item.status} />
+                </div>
+
+                {item.status === "Rescheduled" && item.rescheduledTo ? (
+                  <div className={cardStyles.rescheduledText}>
+                    Rescheduled to:{" "}
+                    <span className={cardStyles.rescheduledSpan}>
+                      {item.rescheduledTo.date} {item.rescheduledTo.time}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Service Appointments */}
+        <h2 className={appointmentPageStyles.serviceTitle}>Service Appointments</h2>
+
+        {loadingServices ? (
+          <div className={appointmentPageStyles.serviceLoadingText}>
+            Loading service appointments...
+          </div>
+        ) : serviceData.length === 0 ? (
+          <div className={appointmentPageStyles.serviceEmptyStateText}>
+            No service appointments booked yet.
+          </div>
+        ) : (
+          <div className={appointmentPageStyles.serviceGrid}>
+            {serviceData.map((srv) => (
+              <div key={srv.id} className={cardStyles.serviceCard}>
+                <div className={cardStyles.serviceImageContainer}>
+                  <img
+                    src={srv.image || "/placeholder-service.png"}
+                    alt={srv.name}
+                    className={cardStyles.image}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/placeholder-service.png";
+                    }}
+                  />
+                </div>
+
+                <h3 className={cardStyles.serviceName}>{srv.name}</h3>
+                <p className={cardStyles.price}>₹{srv.price}</p>
+
+                <p className={cardStyles.serviceDateContainer}>
+                  <CalendarDays className={iconSize.medium} /> {srv.date}
+                </p>
+
+                <p className={cardStyles.serviceTimeContainer}>
+                  <Clock className={iconSize.medium} /> {srv.time}
+                </p>
+
+                <div className={cardStyles.badgesContainer}>
+                  <PaymentBadge payment={srv.payment} />
+                  <StatusBadge itemStatus={srv.status} />
+                </div>
+
+                {srv.status === "Rescheduled" && srv.rescheduledTo ? (
+                  <div className={cardStyles.serviceRescheduledText}>
+                    Rescheduled to{" "}
+                    <span className={cardStyles.rescheduledSpan}>
+                      {srv.rescheduledTo.date} : {srv.rescheduledTo.time}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
