@@ -407,96 +407,108 @@ export default function DashboardPage({ apiBase }) {
           </div>
 
           {/* Cards grid */}
-          <div className={dashboardStyles.cardsGrid}>
-            {top8.map((a) => (
-              <div key={a.id} className={dashboardStyles.appointmentCard}>
-                <div className={dashboardStyles.cardHeader}>
-                  <div className={dashboardStyles.cardAvatar}>
-                    {a.doctorImage ? (
-                      <img
-                        src={a.doctorImage}
-                        alt={a.doctorName}
-                        onError={(e) =>
-                          (e.currentTarget.style.display = "none")
-                        }
-                        className={dashboardStyles.cardAvatarImage}
-                      />
-                    ) : (
-                      <div className={dashboardStyles.cardAvatarFallback}>
-                        {(a.doctorName || "D").charAt(0)}
+          {top8.length === 0 ? (
+            <div className="py-14 text-center text-slate-500 bg-white rounded-xl border border-dashed border-slate-200 my-4">
+              <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              <p className="font-semibold text-slate-700">No Patient Appointments Yet</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Real-time patient bookings scheduled through the clinic or online portal will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            <div className={dashboardStyles.cardsGrid}>
+              {top8.map((a) => (
+                <div key={a.id} className={dashboardStyles.appointmentCard}>
+                  <div className={dashboardStyles.cardHeader}>
+                    <div className={dashboardStyles.cardAvatar}>
+                      {a.doctorImage ? (
+                        <img
+                          src={a.doctorImage}
+                          alt={a.doctorName}
+                          onError={(e) =>
+                            (e.currentTarget.style.display = "none")
+                          }
+                          className={dashboardStyles.cardAvatarImage}
+                        />
+                      ) : (
+                        <div className={dashboardStyles.cardAvatarFallback}>
+                          {(a.doctorName || "D").charAt(0)}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={dashboardStyles.cardContent}>
+                      <div className={dashboardStyles.cardPatientName}>
+                        {a.patient}
                       </div>
-                    )}
-                  </div>
-
-                  <div className={dashboardStyles.cardContent}>
-                    <div className={dashboardStyles.cardPatientName}>
-                      {a.patient}
-                    </div>
-                    <div className={dashboardStyles.cardPatientInfo}>
-                      {a.age} yrs · {a.gender}
-                    </div>
-                    <div className={dashboardStyles.cardDoctorInfo}>
-                      <span className={dashboardStyles.cardDoctorName}>
-                        {a.doctorName}
-                      </span>
-                    </div>
-                    <div className={dashboardStyles.cardSpeciality}>
-                      {a.speciality}
-                    </div>
-                    <div className={dashboardStyles.cardPhoneContainer}>
-                      <Phone className={dashboardStyles.cardPhoneIcon} />
-                      <span>{a.mobile}</span>
+                      <div className={dashboardStyles.cardPatientInfo}>
+                        {a.age} yrs · {a.gender}
+                      </div>
+                      <div className={dashboardStyles.cardDoctorInfo}>
+                        <span className={dashboardStyles.cardDoctorName}>
+                          {a.doctorName}
+                        </span>
+                      </div>
+                      <div className={dashboardStyles.cardSpeciality}>
+                        {a.speciality}
+                      </div>
+                      <div className={dashboardStyles.cardPhoneContainer}>
+                        <Phone className={dashboardStyles.cardPhoneIcon} />
+                        <span>{a.mobile}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className={dashboardStyles.dateTimeContainer}>
-                  <div className={dashboardStyles.dateText}>
-                    {formatDate(a.date)}
-                  </div>
-                  <div className={dashboardStyles.timeText}>
-                    {formatTimeAMPM(a.time)}
-                  </div>
-                </div>
-
-                <div>
-                  <div className={dashboardStyles.cardFooter}>
-                    <div className={dashboardStyles.feeText}>₹{a.fee}</div>
-
-                    <div className={dashboardStyles.statusContainer}>
-                      <StatusBadge status={a.status} />
-                      <StatusSelect
-                        appointment={a}
-                        onChange={(s) => updateStatus(a.id, s)}
-                      />
+                  <div className={dashboardStyles.dateTimeContainer}>
+                    <div className={dashboardStyles.dateText}>
+                      {formatDate(a.date)}
                     </div>
+                    <div className={dashboardStyles.timeText}>
+                      {formatTimeAMPM(a.time)}
+                    </div>
+                  </div>
 
-                    <div className="mt-2 w-full">
-                      <RescheduleButton
-                        appointment={a}
-                        onReschedule={(newDate, newTime) =>
-                          updateDateTime(a.id, newDate, newTime)
-                        }
-                      />
+                  <div>
+                    <div className={dashboardStyles.cardFooter}>
+                      <div className={dashboardStyles.feeText}>₹{a.fee}</div>
+
+                      <div className={dashboardStyles.statusContainer}>
+                        <StatusBadge status={a.status} />
+                        <StatusSelect
+                          appointment={a}
+                          onChange={(s) => updateStatus(a.id, s)}
+                        />
+                      </div>
+
+                      <div className="mt-2 w-full">
+                        <RescheduleButton
+                          appointment={a}
+                          onReschedule={(newDate, newTime) =>
+                            updateDateTime(a.id, newDate, newTime)
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <div className={dashboardStyles.showMoreContainer}>
-            <Link
-              to={
-                doctorId
-                  ? `/doctor-admin/${doctorId}/appointments`
-                  : "/appointments"
-              }
-              className={dashboardStyles.showMoreButton}
-            >
-              Show more
-            </Link>
-          </div>
+          {top8.length > 0 && (
+            <div className={dashboardStyles.showMoreContainer}>
+              <Link
+                to={
+                  doctorId
+                    ? `/doctor-admin/${doctorId}/appointments`
+                    : "/appointments"
+                }
+                className={dashboardStyles.showMoreButton}
+              >
+                Show more
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

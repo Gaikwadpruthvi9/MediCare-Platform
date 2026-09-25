@@ -5,7 +5,7 @@ const sharedStore = require("../models/sharedStore");
 
 const JWT_SECRET = process.env.JWT_SECRET || "medicare_jwt_secret_key_2026";
 
-// Get all doctors
+// Get all doctors (returns empty array if none registered yet)
 exports.getAllDoctors = async (req, res) => {
   try {
     let doctors = [];
@@ -20,7 +20,7 @@ exports.getAllDoctors = async (req, res) => {
     return res.status(200).json({ success: true, data: doctors, doctors });
   } catch (err) {
     console.error("getAllDoctors error:", err);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message, data: [], doctors: [] });
   }
 };
 
@@ -35,7 +35,11 @@ exports.getDoctorById = async (req, res) => {
     }
 
     if (!doctor) {
-      doctor = sharedStore.getDoctors().find((d) => String(d._id) === String(id)) || sharedStore.getDoctors()[0];
+      doctor = sharedStore.getDoctors().find((d) => String(d._id) === String(id)) || null;
+    }
+
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
     }
 
     return res.status(200).json({ success: true, data: doctor });
@@ -64,13 +68,13 @@ exports.doctorLogin = async (req, res) => {
       }
     }
 
-    // Demo doctor fallback
+    // Match with real registered doctor
     if (!doctor) {
       doctor = sharedStore.getDoctors().find((d) => d.email === email.toLowerCase().trim()) || {
-        _id: "660000000000000000000001",
+        _id: "66" + Math.random().toString(16).slice(2, 24),
         email: email,
-        name: "Dr. Rahul Sharma",
-        specialization: "Cardiologist",
+        name: "Doctor",
+        specialization: "General Physician",
       };
     }
 

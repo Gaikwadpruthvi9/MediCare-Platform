@@ -296,63 +296,72 @@ function LoginCard({ setAToken, setDToken, setRole, setProfile }) {
 // ---------------------------------------------------------
 // 2. DASHBOARD PAGE
 // ---------------------------------------------------------
-function AdminDashboardPage() {
+function AdminDashboardPage({ isDoctor = false }) {
   const [data, setData] = useState({
-    doctors: 4,
-    appointments: 2,
-    patients: 1250,
-    earnings: 74500,
+    doctors: 0,
+    appointments: 0,
+    patients: 0,
+    earnings: 0,
     latestAppointments: [],
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const url = isDoctor ? `${BACKEND_URL}/api/doctor/dashboard` : `${BACKEND_URL}/api/admin/dashboard`;
     axios
-      .get(`${BACKEND_URL}/api/admin/dashboard`)
+      .get(url)
       .then((res) => {
         if (res.data?.dashData) setData(res.data.dashData);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [isDoctor]);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Hospital Dashboard</h1>
+      <h1 className="text-2xl font-bold text-slate-800">{isDoctor ? "Doctor Dashboard" : "Hospital Dashboard"}</h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Earnings" value={`₹ ${data.earnings.toLocaleString()}`} icon={<DollarSign className="text-emerald-600" />} bg="bg-emerald-50" />
         <StatCard title="Appointments" value={data.appointments} icon={<CalendarDays className="text-blue-600" />} bg="bg-blue-50" />
         <StatCard title="Patients Treated" value={data.patients} icon={<Activity className="text-purple-600" />} bg="bg-purple-50" />
-        <StatCard title="Registered Doctors" value={data.doctors} icon={<Users className="text-amber-600" />} bg="bg-amber-50" />
+        <StatCard title={isDoctor ? "Doctor Status" : "Registered Doctors"} value={isDoctor ? "Active" : data.doctors} icon={isDoctor ? <CheckCircle className="text-emerald-600" /> : <Users className="text-amber-600" />} bg={isDoctor ? "bg-emerald-50" : "bg-amber-50"} />
       </div>
 
       {/* Latest Bookings */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">Latest Patient Bookings</h2>
-        <div className="divide-y divide-slate-100">
-          {(data.latestAppointments || []).map((appt) => (
-            <div key={appt._id} className="py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img src={appt.userData?.image || "https://i.pravatar.cc/100"} alt="" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+        <h2 className="text-lg font-bold text-slate-800 mb-4">{isDoctor ? "Your Patient Appointments" : "Latest Patient Bookings"}</h2>
+        {(!data.latestAppointments || data.latestAppointments.length === 0) ? (
+          <div className="py-12 text-center text-slate-400 text-sm">
+            <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <p className="font-medium text-slate-600">No Patient Bookings Yet</p>
+            <p className="text-xs text-slate-400 mt-1">Real-time appointments booked on the patient portal will appear here.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {data.latestAppointments.map((appt) => (
+              <div key={appt._id} className="py-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={appt.userData?.image || "https://i.pravatar.cc/100"} alt="" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                  <div>
+                    <p className="font-semibold text-slate-800 text-sm">{appt.userData?.name || "Patient"}</p>
+                    <p className="text-xs text-slate-400">{appt.slotDate} at {appt.slotTime}</p>
+                  </div>
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-800 text-sm">{appt.userData?.name || "Patient"}</p>
-                  <p className="text-xs text-slate-400">{appt.slotDate} at {appt.slotTime}</p>
+                  {appt.isCompleted ? (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Completed</span>
+                  ) : appt.cancelled ? (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-200">Cancelled</span>
+                  ) : (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">Confirmed</span>
+                  )}
                 </div>
               </div>
-              <div>
-                {appt.isCompleted ? (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Completed</span>
-                ) : appt.cancelled ? (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-200">Cancelled</span>
-                ) : (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">Confirmed</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -422,40 +431,50 @@ function AllAppointmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {appointments.map((a, idx) => (
-                <tr key={a._id} className="hover:bg-slate-50/80 transition">
-                  <td className="p-4 text-slate-400">{idx + 1}</td>
-                  <td className="p-4 font-medium text-slate-800">{a.userData?.name || "Patient"}</td>
-                  <td className="p-4 text-slate-600">{a.docData?.name || "Dr. Assigned"}</td>
-                  <td className="p-4 text-slate-600">{a.slotDate} — {a.slotTime}</td>
-                  <td className="p-4 font-semibold text-slate-700">₹{a.amount}</td>
-                  <td className="p-4">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${a.payment ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                      {a.payment ? "Paid Online" : "Pay at Clinic"}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {a.isCompleted ? (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold">Completed</span>
-                    ) : a.cancelled ? (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold">Cancelled</span>
-                    ) : (
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">Active</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    {!a.cancelled && !a.isCompleted && (
-                      <button
-                        onClick={() => handleCancel(a._id)}
-                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                        title="Cancel Appointment"
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    )}
+              {appointments.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="p-12 text-center text-slate-400">
+                    <CalendarDays className="mx-auto mb-2 text-slate-300" size={36} />
+                    <p className="font-medium text-slate-600">No appointments recorded yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Real-time appointments booked by patients will appear here.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                appointments.map((a, idx) => (
+                  <tr key={a._id} className="hover:bg-slate-50/80 transition">
+                    <td className="p-4 text-slate-400">{idx + 1}</td>
+                    <td className="p-4 font-medium text-slate-800">{a.userData?.name || "Patient"}</td>
+                    <td className="p-4 text-slate-600">{a.docData?.name || "Dr. Assigned"}</td>
+                    <td className="p-4 text-slate-600">{a.slotDate} — {a.slotTime}</td>
+                    <td className="p-4 font-semibold text-slate-700">₹{a.amount}</td>
+                    <td className="p-4">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${a.payment ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                        {a.payment ? "Paid Online" : "Pay at Clinic"}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      {a.isCompleted ? (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold">Completed</span>
+                      ) : a.cancelled ? (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold">Cancelled</span>
+                      ) : (
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">Active</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {!a.cancelled && !a.isCompleted && (
+                        <button
+                          onClick={() => handleCancel(a._id)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          title="Cancel Appointment"
+                        >
+                          <XCircle size={18} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -676,42 +695,57 @@ function DoctorListPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {doctors.map((doc) => (
-          <div key={doc._id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between">
-            <div>
-              <img src={doc.image || "https://i.pravatar.cc/300"} alt="" className="w-full h-44 object-cover bg-slate-100" />
-              <div className="p-4 space-y-1.5">
-                <p className="font-bold text-slate-800 text-base">{doc.name}</p>
-                <p className="text-xs text-emerald-700 font-semibold">{doc.speciality || doc.specialization}</p>
-                <p className="text-xs text-slate-500">{doc.degree || "MBBS"} • {doc.experience || "5+ Years"}</p>
-                <p className="text-sm font-bold text-slate-800 pt-1">Fee: ₹{doc.fees || doc.fee}</p>
+      {doctors.length === 0 ? (
+        <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center max-w-md mx-auto my-8">
+          <Users className="mx-auto mb-3 text-slate-300" size={40} />
+          <h3 className="font-semibold text-slate-700 text-base">No Doctors Added Yet</h3>
+          <p className="text-xs text-slate-400 mt-1 mb-5">Start populating your hospital staff by adding your first doctor with their specialization and consultation fees.</p>
+          <Link
+            to="/add-doctor"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition"
+          >
+            <UserPlus size={16} />
+            <span>Add First Doctor</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {doctors.map((doc) => (
+            <div key={doc._id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between">
+              <div>
+                <img src={doc.image || "https://i.pravatar.cc/300"} alt="" className="w-full h-44 object-cover bg-slate-100" />
+                <div className="p-4 space-y-1.5">
+                  <p className="font-bold text-slate-800 text-base">{doc.name}</p>
+                  <p className="text-xs text-emerald-700 font-semibold">{doc.speciality || doc.specialization}</p>
+                  <p className="text-xs text-slate-500">{doc.degree || "MBBS"} • {doc.experience || "5+ Years"}</p>
+                  <p className="text-sm font-bold text-slate-800 pt-1">Fee: ₹{doc.fees || doc.fee}</p>
+                </div>
+              </div>
+
+              <div className="p-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={doc.available ?? true}
+                    onChange={() => toggleAvailability(doc._id)}
+                    className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
+                  />
+                  <span>Available</span>
+                </label>
+
+                <button
+                  onClick={() => handleRemoveDoctor(doc._id, doc.name)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                  title="Remove Doctor"
+                >
+                  <Trash2 size={13} />
+                  <span>Remove</span>
+                </button>
               </div>
             </div>
-
-            <div className="p-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={doc.available ?? true}
-                  onChange={() => toggleAvailability(doc._id)}
-                  className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
-                />
-                <span>Available</span>
-              </label>
-
-              <button
-                onClick={() => handleRemoveDoctor(doc._id, doc.name)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
-                title="Remove Doctor"
-              >
-                <Trash2 size={13} />
-                <span>Remove</span>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -833,28 +867,43 @@ function ListServicePage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {services.map((s) => (
-          <div key={s._id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition">
-            <div>
-              <h3 className="font-bold text-slate-800 text-base">{s.name}</h3>
-              <p className="text-xs text-slate-500 mt-1.5 line-clamp-3 leading-relaxed">{s.description || s.about || "Diagnostics & clinical care"}</p>
-            </div>
+      {services.length === 0 ? (
+        <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center max-w-md mx-auto my-8">
+          <Activity className="mx-auto mb-3 text-slate-300" size={40} />
+          <h3 className="font-semibold text-slate-700 text-base">No Medical Services Added Yet</h3>
+          <p className="text-xs text-slate-400 mt-1 mb-5">Add clinical services, diagnostic packages, or consultation types for patients to book.</p>
+          <Link
+            to="/add-service"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition"
+          >
+            <PlusCircle size={16} />
+            <span>Add First Service</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {services.map((s) => (
+            <div key={s._id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">{s.name}</h3>
+                <p className="text-xs text-slate-500 mt-1.5 line-clamp-3 leading-relaxed">{s.description || s.about || "Diagnostics & clinical care"}</p>
+              </div>
 
-            <div className="pt-4 mt-4 flex items-center justify-between border-t border-slate-100">
-              <p className="text-base font-bold text-emerald-700">₹ {s.price}</p>
-              <button
-                onClick={() => handleRemoveService(s._id, s.name)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
-                title="Remove Service"
-              >
-                <Trash2 size={13} />
-                <span>Delete</span>
-              </button>
+              <div className="pt-4 mt-4 flex items-center justify-between border-t border-slate-100">
+                <p className="text-base font-bold text-emerald-700">₹ {s.price}</p>
+                <button
+                  onClick={() => handleRemoveService(s._id, s.name)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                  title="Remove Service"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

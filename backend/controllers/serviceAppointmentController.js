@@ -1,5 +1,7 @@
 const ServiceAppointment = require("../models/serviceAppointment");
 
+let mockServiceAppointments = [];
+
 // Get all service appointments
 exports.getServiceAppointments = async (req, res) => {
   try {
@@ -9,25 +11,13 @@ exports.getServiceAppointments = async (req, res) => {
     }
 
     if (!list || list.length === 0) {
-      list = [
-        {
-          _id: "660000000000000000000301",
-          serviceName: "Full Body Health Checkup",
-          patientName: "Vikram Malhotra",
-          mobile: "9876598765",
-          date: "2026-09-26",
-          time: "08:00 AM",
-          fees: 999,
-          status: "Confirmed",
-          payment: { method: "Online", status: "Paid", amount: 999 },
-        },
-      ];
+      list = mockServiceAppointments;
     }
 
     return res.status(200).json({ success: true, appointments: list });
   } catch (err) {
     console.error("getServiceAppointments error:", err);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message, appointments: [] });
   }
 };
 
@@ -38,6 +28,7 @@ exports.createServiceAppointment = async (req, res) => {
     if (ServiceAppointment.db.readyState === 1) {
       created = await ServiceAppointment.create(req.body);
     }
+    mockServiceAppointments.unshift(created);
     return res.status(201).json({ success: true, appointment: created });
   } catch (err) {
     console.error("createServiceAppointment error:", err);

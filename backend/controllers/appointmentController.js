@@ -1,6 +1,7 @@
 const Appointment = require("../models/Appointment");
+const sharedStore = require("../models/sharedStore");
 
-// Get appointments for a specific doctor
+// Get appointments for a specific doctor (real-time only)
 exports.getDoctorAppointments = async (req, res) => {
   try {
     const { doctorId } = req.params;
@@ -11,44 +12,15 @@ exports.getDoctorAppointments = async (req, res) => {
     }
 
     if (!list || list.length === 0) {
-      list = [
-        {
-          _id: "660000000000000000000101",
-          patientName: "Aman Gupta",
-          mobile: "9876543210",
-          age: 34,
-          gender: "Male",
-          doctorId,
-          doctorName: "Dr. Rahul Sharma",
-          speciality: "Cardiologist",
-          date: "2026-09-26",
-          time: "10:00 AM",
-          fees: 500,
-          status: "Confirmed",
-          payment: { method: "Online", status: "Paid", amount: 500 },
-        },
-        {
-          _id: "660000000000000000000102",
-          patientName: "Neha Verma",
-          mobile: "9876512345",
-          age: 28,
-          gender: "Female",
-          doctorId,
-          doctorName: "Dr. Rahul Sharma",
-          speciality: "Cardiologist",
-          date: "2026-09-27",
-          time: "02:00 PM",
-          fees: 500,
-          status: "Pending",
-          payment: { method: "Cash", status: "Pending", amount: 500 },
-        },
-      ];
+      list = sharedStore.getAppointments().filter(
+        (a) => String(a.doctorId) === String(doctorId) || String(a.docId) === String(doctorId)
+      );
     }
 
     return res.status(200).json({ success: true, appointments: list });
   } catch (err) {
     console.error("getDoctorAppointments error:", err);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message, appointments: [] });
   }
 };
 
@@ -61,26 +33,13 @@ exports.getMyAppointments = async (req, res) => {
     }
 
     if (!list || list.length === 0) {
-      list = [
-        {
-          _id: "660000000000000000000101",
-          patientName: "Aman Gupta",
-          mobile: "9876543210",
-          doctorName: "Dr. Rahul Sharma",
-          specialization: "Cardiologist",
-          date: "2026-09-26",
-          time: "10:00 AM",
-          fees: 500,
-          status: "Confirmed",
-          payment: { method: "Online", status: "Paid" },
-        },
-      ];
+      list = sharedStore.getAppointments();
     }
 
     return res.status(200).json({ success: true, appointments: list });
   } catch (err) {
     console.error("getMyAppointments error:", err);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message, appointments: [] });
   }
 };
 
@@ -93,6 +52,7 @@ exports.createAppointment = async (req, res) => {
     if (Appointment.db.readyState === 1) {
       created = await Appointment.create(data);
     }
+    created = sharedStore.addAppointment(created);
 
     return res.status(201).json({ success: true, appointment: created });
   } catch (err) {
@@ -109,6 +69,13 @@ exports.updateAppointment = async (req, res) => {
 
     if (Appointment.db.readyState === 1 && id.match(/^[0-9a-fA-F]{24}$/)) {
       updated = await Appointment.findByIdAndUpdate(id, { $set: req.body }, { new: true });
+    }
+
+    if (req.body.cancelled) {
+      sharedStore.cancelAppointment(id);
+    }
+    if (req.body.isCompleted) {
+      sharedStore.completeAppointment(id);
     }
 
     return res.status(200).json({ success: true, appointment: updated });

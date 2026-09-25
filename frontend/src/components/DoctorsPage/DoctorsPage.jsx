@@ -145,7 +145,9 @@ export default function DoctorsPage() {
           </div>
         ) : displayedDoctors.length === 0 ? (
           <div className={doctorsPageStyles.noResults}>
-            No doctors found matching "{searchTerm}".
+            {searchTerm
+              ? `No doctors found matching "${searchTerm}".`
+              : "No specialists registered yet. Once doctors are added in the Admin Panel, they will appear here."}
           </div>
         ) : (
           <div className={doctorsPageStyles.doctorsGrid}>

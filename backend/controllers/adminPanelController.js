@@ -14,7 +14,7 @@ exports.allDoctors = async (req, res) => {
     }
     return res.status(200).json({ success: true, doctors });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message, doctors: [] });
   }
 };
 
@@ -81,7 +81,7 @@ exports.adminAppointments = async (req, res) => {
   try {
     return res.status(200).json({ success: true, appointments: sharedStore.getAppointments() });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message, appointments: [] });
   }
 };
 
@@ -96,35 +96,31 @@ exports.adminCancelAppointment = async (req, res) => {
   }
 };
 
-// 7. Admin Dashboard Data
+// 7. Admin Dashboard Data (Real-time calculated)
 exports.adminDashboard = async (req, res) => {
   try {
-    const docs = sharedStore.getDoctors();
-    const appts = sharedStore.getAppointments();
+    const stats = sharedStore.getDashboardStats();
     return res.status(200).json({
       success: true,
-      dashData: {
-        doctors: docs.length,
-        appointments: appts.length,
-        patients: 1250,
-        earnings: 74500,
-        latestAppointments: appts.slice(0, 5),
-      },
+      dashData: stats,
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+      dashData: { doctors: 0, appointments: 0, patients: 0, earnings: 0, latestAppointments: [] },
+    });
   }
 };
 
-// 8. Doctor Specific Endpoints
+// 8. Doctor Specific Endpoints (Real-time)
 exports.doctorAppointments = async (req, res) => {
   return res.status(200).json({ success: true, appointments: sharedStore.getAppointments() });
 };
 
 exports.doctorCompleteAppointment = async (req, res) => {
   const { appointmentId } = req.body;
-  const item = sharedStore.getAppointments().find((a) => a._id === appointmentId);
-  if (item) item.isCompleted = true;
+  sharedStore.completeAppointment(appointmentId);
   return res.status(200).json({ success: true, message: "Appointment Completed" });
 };
 
@@ -135,31 +131,40 @@ exports.doctorCancelAppointment = async (req, res) => {
 };
 
 exports.doctorDashboard = async (req, res) => {
+  const appts = sharedStore.getAppointments();
+  const earnings = appts
+    .filter((a) => a.isCompleted)
+    .reduce((sum, a) => sum + (Number(a.amount) || Number(a.fees) || 0), 0);
+  const patients = new Set(appts.map((a) => a.userId || a.patientName || a._id)).size;
+
   return res.status(200).json({
     success: true,
     dashData: {
-      earnings: 32000,
-      appointments: sharedStore.getAppointments().length,
-      patients: 64,
-      latestAppointments: sharedStore.getAppointments().slice(0, 5),
+      earnings,
+      appointments: appts.length,
+      patients,
+      latestAppointments: appts.slice(0, 5),
     },
   });
 };
 
 exports.doctorProfile = async (req, res) => {
+  const docs = sharedStore.getDoctors();
+  const defaultDoc = docs[0] || {
+    name: "Doctor",
+    degree: "MBBS",
+    speciality: "General Physician",
+    experience: "5+ Years",
+    about: "Medical specialist providing clinical consultations.",
+    fees: 500,
+    available: true,
+    address: { line1: "MediCare Clinic", line2: "" },
+    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250",
+  };
+
   return res.status(200).json({
     success: true,
-    profileData: {
-      name: "Dr. Rahul Sharma",
-      degree: "MBBS, MD",
-      speciality: "Cardiologist",
-      experience: "10+ Years",
-      about: "Senior Cardiologist dedicated to patient recovery and heart wellness.",
-      fees: 500,
-      available: true,
-      address: { line1: "Apollo Medical Clinic", line2: "New Delhi" },
-      image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250",
-    },
+    profileData: defaultDoc,
   });
 };
 

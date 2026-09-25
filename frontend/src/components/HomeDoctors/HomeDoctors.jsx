@@ -102,6 +102,11 @@ export default function HomeDoctors({ previewCount = 8 }) {
               </div>
             ))}
           </div>
+        ) : preview.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 bg-white rounded-2xl border border-dashed border-slate-200">
+            <p className="font-semibold text-slate-700">No Specialists Listed Yet</p>
+            <p className="text-xs text-slate-400 mt-1">Specialists registered in the Admin Panel will be featured here in real-time.</p>
+          </div>
         ) : (
           <div className={homeDoctorsStyles.doctorsGrid}>
             {preview.map((doctor) => (
