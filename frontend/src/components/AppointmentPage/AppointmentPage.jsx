@@ -17,8 +17,9 @@ import {
   badgeStyles,
   iconSize,
 } from "../../assets/dummyStyles";
+import { API_BASE } from "../../config/api";
 
-const API = axios.create({ baseURL: "http://localhost:4000" });
+const API = axios.create({ baseURL: API_BASE });
 
 function pad(n) {
   return String(n ?? 0).padStart(2, "0");

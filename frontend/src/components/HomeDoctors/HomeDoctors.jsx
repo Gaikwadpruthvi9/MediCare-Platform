@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Award, CalendarCheck, Ban } from "lucide-react";
 import { homeDoctorsStyles } from "../../assets/dummyStyles";
-
-const API_BASE = "http://localhost:4000";
+import { API_BASE } from "../../config/api";
 
 export default function HomeDoctors({ previewCount = 8 }) {
   const [doctors, setDoctors] = useState([]);

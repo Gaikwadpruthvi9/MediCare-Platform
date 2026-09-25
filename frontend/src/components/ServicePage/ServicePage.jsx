@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { servicePageStyles, serviceCardStyles } from "../../assets/dummyStyles";
-
-const API_BASE = "http://localhost:4000";
+import { API_BASE } from "../../config/api";
 const PlaceholderImg = "/placeholder-service.jpg";
 
 export const ServiceCard = ({ service }) => {

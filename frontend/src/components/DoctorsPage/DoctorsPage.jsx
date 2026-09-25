@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Search, X, Award, CalendarCheck, Ban, ChevronRight } from "lucide-react";
 import { doctorsPageStyles } from "../../assets/dummyStyles";
-
-const API_BASE = "http://localhost:4000";
+import { API_BASE } from "../../config/api";
 
 export default function DoctorsPage() {
   const [allDoctors, setAllDoctors] = useState([]);

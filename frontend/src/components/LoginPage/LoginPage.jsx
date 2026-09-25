@@ -4,9 +4,9 @@ import { ArrowLeft, Lock, Mail, Stethoscope } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import logo from "../../assets/logo.png";
 import { loginPageStyles, toastStyles } from "../../assets/dummyStyles";
+import { API_BASE } from "../../config/api";
 
 const STORAGE_KEY = "doctorToken_v1";
-const API_BASE = "http://localhost:4000";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
