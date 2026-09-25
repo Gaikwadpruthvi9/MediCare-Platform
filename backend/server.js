@@ -7,6 +7,7 @@ const doctorController = require("./controllers/doctorController");
 const appointmentController = require("./controllers/appointmentController");
 const serviceController = require("./controllers/serviceController");
 const serviceAppointmentController = require("./controllers/serviceAppointmentController");
+const adminPanelController = require("./controllers/adminPanelController");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -89,6 +90,22 @@ app.post("/api/services", serviceController.createService);
 app.get("/api/service-appointments", serviceAppointmentController.getServiceAppointments);
 app.post("/api/service-appointments", serviceAppointmentController.createServiceAppointment);
 app.put("/api/service-appointments/:id", serviceAppointmentController.updateServiceAppointment);
+
+// Prescripto Admin Panel Routes
+app.all("/api/admin/all-doctors", adminPanelController.allDoctors);
+app.post("/api/admin/add-doctor", adminPanelController.addDoctor);
+app.post("/api/admin/change-availablity", adminPanelController.changeAvailability);
+app.all("/api/admin/appointments", adminPanelController.adminAppointments);
+app.post("/api/admin/cancel-appointment", adminPanelController.adminCancelAppointment);
+app.all("/api/admin/dashboard", adminPanelController.adminDashboard);
+
+// Prescripto Doctor Panel Routes
+app.all("/api/doctor/appointments", adminPanelController.doctorAppointments);
+app.post("/api/doctor/complete-appointment", adminPanelController.doctorCompleteAppointment);
+app.post("/api/doctor/cancel-appointment", adminPanelController.doctorCancelAppointment);
+app.all("/api/doctor/dashboard", adminPanelController.doctorDashboard);
+app.all("/api/doctor/profile", adminPanelController.doctorProfile);
+app.post("/api/doctor/update-profile", adminPanelController.doctorUpdateProfile);
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
