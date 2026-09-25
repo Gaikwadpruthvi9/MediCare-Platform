@@ -647,29 +647,67 @@ function DoctorListPage() {
     }
   };
 
+  const handleRemoveDoctor = async (docId, docName) => {
+    if (!window.confirm(`Are you sure you want to remove Dr. ${docName}?`)) {
+      return;
+    }
+    try {
+      await axios.post(`${BACKEND_URL}/api/admin/remove-doctor`, { docId });
+      toast.success(`Dr. ${docName} removed successfully`);
+      fetchDocs();
+    } catch {
+      toast.error("Failed to remove doctor");
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">All Registered Doctors</h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">All Registered Doctors</h1>
+          <p className="text-xs text-slate-400 mt-1">Manage active doctors, toggle availability or remove doctor records</p>
+        </div>
+        <Link
+          to="/add-doctor"
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow-xs"
+        >
+          <UserPlus size={16} />
+          <span>Add New Doctor</span>
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {doctors.map((doc) => (
-          <div key={doc._id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition">
-            <img src={doc.image || "https://i.pravatar.cc/300"} alt="" className="w-full h-44 object-cover bg-slate-100" />
-            <div className="p-4 space-y-2">
-              <p className="font-bold text-slate-800 text-base">{doc.name}</p>
-              <p className="text-xs text-emerald-700 font-semibold">{doc.speciality || doc.specialization}</p>
-              <p className="text-xs text-slate-500">{doc.degree || "MBBS"} • {doc.experience || "5+ Years"}</p>
-              <p className="text-sm font-bold text-slate-800">Fee: ₹{doc.fees || doc.fee}</p>
+          <div key={doc._id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <img src={doc.image || "https://i.pravatar.cc/300"} alt="" className="w-full h-44 object-cover bg-slate-100" />
+              <div className="p-4 space-y-1.5">
+                <p className="font-bold text-slate-800 text-base">{doc.name}</p>
+                <p className="text-xs text-emerald-700 font-semibold">{doc.speciality || doc.specialization}</p>
+                <p className="text-xs text-slate-500">{doc.degree || "MBBS"} • {doc.experience || "5+ Years"}</p>
+                <p className="text-sm font-bold text-slate-800 pt-1">Fee: ₹{doc.fees || doc.fee}</p>
+              </div>
+            </div>
 
-              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-                <span className="text-xs text-slate-500">Available</span>
+            <div className="p-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={doc.available ?? true}
                   onChange={() => toggleAvailability(doc._id)}
                   className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
                 />
-              </div>
+                <span>Available</span>
+              </label>
+
+              <button
+                onClick={() => handleRemoveDoctor(doc._id, doc.name)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                title="Remove Doctor"
+              >
+                <Trash2 size={13} />
+                <span>Remove</span>
+              </button>
             </div>
           </div>
         ))}
@@ -749,25 +787,71 @@ function AddServicePage() {
 // ---------------------------------------------------------
 function ListServicePage() {
   const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchServices = () => {
+    setLoading(true);
     axios
       .get(`${BACKEND_URL}/api/services`)
       .then((res) => {
         if (res.data?.data) setServices(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchServices();
   }, []);
+
+  const handleRemoveService = async (serviceId, serviceName) => {
+    if (!window.confirm(`Are you sure you want to remove ${serviceName}?`)) {
+      return;
+    }
+    try {
+      await axios.delete(`${BACKEND_URL}/api/services/${serviceId}`);
+      toast.success(`${serviceName} removed successfully`);
+      fetchServices();
+    } catch {
+      toast.error("Failed to remove service");
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Hospital Medical Services</h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Hospital Medical Services</h1>
+          <p className="text-xs text-slate-400 mt-1">Manage diagnostic tests, health packages, and hospital services</p>
+        </div>
+        <Link
+          to="/add-service"
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow-xs"
+        >
+          <PlusCircle size={16} />
+          <span>Add New Service</span>
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {services.map((s) => (
-          <div key={s._id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-            <h3 className="font-bold text-slate-800 text-base">{s.name}</h3>
-            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{s.description || "Diagnostics & clinical care"}</p>
-            <p className="text-base font-bold text-emerald-700 mt-3">₹ {s.price}</p>
+          <div key={s._id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+            <div>
+              <h3 className="font-bold text-slate-800 text-base">{s.name}</h3>
+              <p className="text-xs text-slate-500 mt-1.5 line-clamp-3 leading-relaxed">{s.description || s.about || "Diagnostics & clinical care"}</p>
+            </div>
+
+            <div className="pt-4 mt-4 flex items-center justify-between border-t border-slate-100">
+              <p className="text-base font-bold text-emerald-700">₹ {s.price}</p>
+              <button
+                onClick={() => handleRemoveService(s._id, s.name)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                title="Remove Service"
+              >
+                <Trash2 size={13} />
+                <span>Delete</span>
+              </button>
+            </div>
           </div>
         ))}
       </div>

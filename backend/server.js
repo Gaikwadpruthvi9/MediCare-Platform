@@ -94,10 +94,17 @@ app.put("/api/service-appointments/:id", serviceAppointmentController.updateServ
 // Prescripto Admin Panel Routes
 app.all("/api/admin/all-doctors", adminPanelController.allDoctors);
 app.post("/api/admin/add-doctor", adminPanelController.addDoctor);
+app.post("/api/admin/remove-doctor", adminPanelController.removeDoctor);
+app.delete("/api/admin/doctor/:id", adminPanelController.removeDoctor);
+app.delete("/api/doctors/:id", doctorController.deleteDoctor);
 app.post("/api/admin/change-availablity", adminPanelController.changeAvailability);
 app.all("/api/admin/appointments", adminPanelController.adminAppointments);
 app.post("/api/admin/cancel-appointment", adminPanelController.adminCancelAppointment);
 app.all("/api/admin/dashboard", adminPanelController.adminDashboard);
+
+// Service Delete Routes
+app.delete("/api/services/:id", serviceController.deleteService);
+app.post("/api/admin/remove-service", serviceController.deleteService);
 
 // Prescripto Doctor Panel Routes
 app.all("/api/doctor/appointments", adminPanelController.doctorAppointments);

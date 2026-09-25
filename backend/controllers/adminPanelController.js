@@ -1,5 +1,70 @@
 const Doctor = require("../models/Doctor");
 const Appointment = require("../models/Appointment");
+const Service = require("../models/Service");
+
+// In-memory doctors list
+let mockDoctors = [
+  {
+    _id: "660000000000000000000001",
+    name: "Dr. Rahul Sharma",
+    email: "rahul@medicare.com",
+    speciality: "Cardiologist",
+    specialization: "Cardiologist",
+    degree: "MBBS, MD",
+    experience: "10+ Years",
+    about: "Experienced cardiologist specializing in cardiovascular interventions.",
+    fees: 500,
+    fee: 500,
+    available: true,
+    address: { line1: "Apollo Medical Center", line2: "New Delhi" },
+    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250",
+  },
+  {
+    _id: "660000000000000000000002",
+    name: "Dr. Priya Patel",
+    email: "priya@medicare.com",
+    speciality: "Dermatologist",
+    specialization: "Dermatologist",
+    degree: "MBBS, MD",
+    experience: "8+ Years",
+    about: "Expert in cosmetic skincare and pediatric dermatology.",
+    fees: 600,
+    fee: 600,
+    available: true,
+    address: { line1: "Skin Health Clinic", line2: "Mumbai" },
+    image: "https://images.unsplash.com/photo-1594824813587-c10444369fef?auto=format&fit=crop&q=80&w=250",
+  },
+  {
+    _id: "660000000000000000000003",
+    name: "Dr. Amit Verma",
+    email: "amit@medicare.com",
+    speciality: "Orthopedic Surgeon",
+    specialization: "Orthopedic Surgeon",
+    degree: "MBBS, MS",
+    experience: "12+ Years",
+    about: "Joint replacement and spine reconstruction specialist.",
+    fees: 700,
+    fee: 700,
+    available: true,
+    address: { line1: "Max Hospital", line2: "Lucknow" },
+    image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=250",
+  },
+  {
+    _id: "660000000000000000000004",
+    name: "Dr. Sneha Roy",
+    email: "sneha@medicare.com",
+    speciality: "Pediatrician",
+    specialization: "Pediatrician",
+    degree: "MBBS, MD",
+    experience: "7+ Years",
+    about: "Dedicated pediatrician focused on neonatal and early childhood health.",
+    fees: 450,
+    fee: 450,
+    available: true,
+    address: { line1: "Rainbow Children Hospital", line2: "Bangalore" },
+    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=250",
+  },
+];
 
 // In-memory appointments fallback
 let mockAppointments = [
@@ -55,38 +120,7 @@ exports.allDoctors = async (req, res) => {
       doctors = await Doctor.find({}).select("-password");
     }
     if (!doctors.length) {
-      doctors = [
-        {
-          _id: "660000000000000000000001",
-          name: "Dr. Rahul Sharma",
-          email: "rahul@medicare.com",
-          speciality: "Cardiologist",
-          specialization: "Cardiologist",
-          degree: "MBBS, MD",
-          experience: "10+ Years",
-          about: "Experienced cardiologist specializing in cardiovascular interventions.",
-          fees: 500,
-          fee: 500,
-          available: true,
-          address: { line1: "Apollo Medical Center", line2: "New Delhi" },
-          image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250",
-        },
-        {
-          _id: "660000000000000000000002",
-          name: "Dr. Priya Patel",
-          email: "priya@medicare.com",
-          speciality: "Dermatologist",
-          specialization: "Dermatologist",
-          degree: "MBBS, MD",
-          experience: "8+ Years",
-          about: "Expert in cosmetic skincare and pediatric dermatology.",
-          fees: 600,
-          fee: 600,
-          available: true,
-          address: { line1: "Skin Health Clinic", line2: "Mumbai" },
-          image: "https://images.unsplash.com/photo-1594824813587-c10444369fef?auto=format&fit=crop&q=80&w=250",
-        },
-      ];
+      doctors = mockDoctors;
     }
     return res.status(200).json({ success: true, doctors });
   } catch (err) {
@@ -104,6 +138,10 @@ exports.changeAvailability = async (req, res) => {
         doc.available = !doc.available;
         await doc.save();
       }
+    }
+    const memDoc = mockDoctors.find((d) => String(d._id) === String(docId));
+    if (memDoc) {
+      memDoc.available = !memDoc.available;
     }
     return res.status(200).json({ success: true, message: "Availability Changed" });
   } catch (err) {
@@ -124,13 +162,34 @@ exports.addDoctor = async (req, res) => {
     if (Doctor.db.readyState === 1) {
       newDoc = await Doctor.create(newDoc);
     }
+    mockDoctors.unshift(newDoc);
     return res.status(200).json({ success: true, message: "Doctor Added Successfully", doctor: newDoc });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// 4. Admin Appointments List
+// 4. Remove / Delete Doctor
+exports.removeDoctor = async (req, res) => {
+  try {
+    const docId = req.params.id || req.body.docId || req.body.id;
+    if (!docId) {
+      return res.status(400).json({ success: false, message: "Doctor ID is required" });
+    }
+
+    if (Doctor.db.readyState === 1 && docId.match(/^[0-9a-fA-F]{24}$/)) {
+      await Doctor.findByIdAndDelete(docId);
+    }
+    mockDoctors = mockDoctors.filter((d) => String(d._id) !== String(docId));
+
+    return res.status(200).json({ success: true, message: "Doctor removed successfully" });
+  } catch (err) {
+    console.error("removeDoctor error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// 5. Admin Appointments List
 exports.adminAppointments = async (req, res) => {
   try {
     return res.status(200).json({ success: true, appointments: mockAppointments });
@@ -139,7 +198,7 @@ exports.adminAppointments = async (req, res) => {
   }
 };
 
-// 5. Admin Cancel Appointment
+// 6. Admin Cancel Appointment
 exports.adminCancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.body;
@@ -153,13 +212,13 @@ exports.adminCancelAppointment = async (req, res) => {
   }
 };
 
-// 6. Admin Dashboard Data
+// 7. Admin Dashboard Data
 exports.adminDashboard = async (req, res) => {
   try {
     return res.status(200).json({
       success: true,
       dashData: {
-        doctors: 4,
+        doctors: mockDoctors.length,
         appointments: mockAppointments.length,
         patients: 1250,
         earnings: 74500,
@@ -171,7 +230,7 @@ exports.adminDashboard = async (req, res) => {
   }
 };
 
-// 7. Doctor Specific Endpoints
+// 8. Doctor Specific Endpoints
 exports.doctorAppointments = async (req, res) => {
   return res.status(200).json({ success: true, appointments: mockAppointments });
 };

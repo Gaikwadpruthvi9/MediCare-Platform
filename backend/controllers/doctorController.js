@@ -260,3 +260,22 @@ exports.updateDoctor = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// Delete Doctor
+exports.deleteDoctor = async (req, res) => {
+  try {
+    const docId = req.params.id || req.body.docId || req.body.id;
+    if (!docId) {
+      return res.status(400).json({ success: false, message: "Doctor ID is required" });
+    }
+
+    if (Doctor.db.readyState === 1 && docId.match(/^[0-9a-fA-F]{24}$/)) {
+      await Doctor.findByIdAndDelete(docId);
+    }
+
+    return res.status(200).json({ success: true, message: "Doctor removed successfully" });
+  } catch (err) {
+    console.error("deleteDoctor error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
