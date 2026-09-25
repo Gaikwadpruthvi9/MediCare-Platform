@@ -1,116 +1,6 @@
 const Doctor = require("../models/Doctor");
 const Appointment = require("../models/Appointment");
-const Service = require("../models/Service");
-
-// In-memory doctors list
-let mockDoctors = [
-  {
-    _id: "660000000000000000000001",
-    name: "Dr. Rahul Sharma",
-    email: "rahul@medicare.com",
-    speciality: "Cardiologist",
-    specialization: "Cardiologist",
-    degree: "MBBS, MD",
-    experience: "10+ Years",
-    about: "Experienced cardiologist specializing in cardiovascular interventions.",
-    fees: 500,
-    fee: 500,
-    available: true,
-    address: { line1: "Apollo Medical Center", line2: "New Delhi" },
-    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250",
-  },
-  {
-    _id: "660000000000000000000002",
-    name: "Dr. Priya Patel",
-    email: "priya@medicare.com",
-    speciality: "Dermatologist",
-    specialization: "Dermatologist",
-    degree: "MBBS, MD",
-    experience: "8+ Years",
-    about: "Expert in cosmetic skincare and pediatric dermatology.",
-    fees: 600,
-    fee: 600,
-    available: true,
-    address: { line1: "Skin Health Clinic", line2: "Mumbai" },
-    image: "https://images.unsplash.com/photo-1594824813587-c10444369fef?auto=format&fit=crop&q=80&w=250",
-  },
-  {
-    _id: "660000000000000000000003",
-    name: "Dr. Amit Verma",
-    email: "amit@medicare.com",
-    speciality: "Orthopedic Surgeon",
-    specialization: "Orthopedic Surgeon",
-    degree: "MBBS, MS",
-    experience: "12+ Years",
-    about: "Joint replacement and spine reconstruction specialist.",
-    fees: 700,
-    fee: 700,
-    available: true,
-    address: { line1: "Max Hospital", line2: "Lucknow" },
-    image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=250",
-  },
-  {
-    _id: "660000000000000000000004",
-    name: "Dr. Sneha Roy",
-    email: "sneha@medicare.com",
-    speciality: "Pediatrician",
-    specialization: "Pediatrician",
-    degree: "MBBS, MD",
-    experience: "7+ Years",
-    about: "Dedicated pediatrician focused on neonatal and early childhood health.",
-    fees: 450,
-    fee: 450,
-    available: true,
-    address: { line1: "Rainbow Children Hospital", line2: "Bangalore" },
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=250",
-  },
-];
-
-// In-memory appointments fallback
-let mockAppointments = [
-  {
-    _id: "660000000000000000000101",
-    userId: "user_1",
-    userData: {
-      name: "Pruthviraj Gaikwad",
-      image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
-      dob: "2000-01-01",
-    },
-    docId: "660000000000000000000001",
-    docData: {
-      name: "Dr. Rahul Sharma",
-      speciality: "Cardiologist",
-      image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250",
-    },
-    slotDate: "2026-09-26",
-    slotTime: "10:00 AM",
-    amount: 500,
-    payment: true,
-    cancelled: false,
-    isCompleted: false,
-  },
-  {
-    _id: "660000000000000000000102",
-    userId: "user_2",
-    userData: {
-      name: "Ananya Deshmukh",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
-      dob: "1998-05-15",
-    },
-    docId: "660000000000000000000002",
-    docData: {
-      name: "Dr. Priya Patel",
-      speciality: "Dermatologist",
-      image: "https://images.unsplash.com/photo-1594824813587-c10444369fef?auto=format&fit=crop&q=80&w=250",
-    },
-    slotDate: "2026-09-26",
-    slotTime: "11:00 AM",
-    amount: 600,
-    payment: false,
-    cancelled: false,
-    isCompleted: true,
-  },
-];
+const sharedStore = require("../models/sharedStore");
 
 // 1. All Doctors
 exports.allDoctors = async (req, res) => {
@@ -120,7 +10,7 @@ exports.allDoctors = async (req, res) => {
       doctors = await Doctor.find({}).select("-password");
     }
     if (!doctors.length) {
-      doctors = mockDoctors;
+      doctors = sharedStore.getDoctors();
     }
     return res.status(200).json({ success: true, doctors });
   } catch (err) {
@@ -139,10 +29,7 @@ exports.changeAvailability = async (req, res) => {
         await doc.save();
       }
     }
-    const memDoc = mockDoctors.find((d) => String(d._id) === String(docId));
-    if (memDoc) {
-      memDoc.available = !memDoc.available;
-    }
+    sharedStore.toggleDoctorAvailability(docId);
     return res.status(200).json({ success: true, message: "Availability Changed" });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
@@ -162,8 +49,8 @@ exports.addDoctor = async (req, res) => {
     if (Doctor.db.readyState === 1) {
       newDoc = await Doctor.create(newDoc);
     }
-    mockDoctors.unshift(newDoc);
-    return res.status(200).json({ success: true, message: "Doctor Added Successfully", doctor: newDoc });
+    const added = sharedStore.addDoctor(newDoc);
+    return res.status(200).json({ success: true, message: "Doctor Added Successfully", doctor: added });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -180,7 +67,7 @@ exports.removeDoctor = async (req, res) => {
     if (Doctor.db.readyState === 1 && docId.match(/^[0-9a-fA-F]{24}$/)) {
       await Doctor.findByIdAndDelete(docId);
     }
-    mockDoctors = mockDoctors.filter((d) => String(d._id) !== String(docId));
+    sharedStore.removeDoctor(docId);
 
     return res.status(200).json({ success: true, message: "Doctor removed successfully" });
   } catch (err) {
@@ -192,7 +79,7 @@ exports.removeDoctor = async (req, res) => {
 // 5. Admin Appointments List
 exports.adminAppointments = async (req, res) => {
   try {
-    return res.status(200).json({ success: true, appointments: mockAppointments });
+    return res.status(200).json({ success: true, appointments: sharedStore.getAppointments() });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -202,10 +89,7 @@ exports.adminAppointments = async (req, res) => {
 exports.adminCancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.body;
-    const item = mockAppointments.find((a) => a._id === appointmentId);
-    if (item) {
-      item.cancelled = true;
-    }
+    sharedStore.cancelAppointment(appointmentId);
     return res.status(200).json({ success: true, message: "Appointment Cancelled" });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
@@ -215,14 +99,16 @@ exports.adminCancelAppointment = async (req, res) => {
 // 7. Admin Dashboard Data
 exports.adminDashboard = async (req, res) => {
   try {
+    const docs = sharedStore.getDoctors();
+    const appts = sharedStore.getAppointments();
     return res.status(200).json({
       success: true,
       dashData: {
-        doctors: mockDoctors.length,
-        appointments: mockAppointments.length,
+        doctors: docs.length,
+        appointments: appts.length,
         patients: 1250,
         earnings: 74500,
-        latestAppointments: mockAppointments.slice(0, 5),
+        latestAppointments: appts.slice(0, 5),
       },
     });
   } catch (err) {
@@ -232,20 +118,19 @@ exports.adminDashboard = async (req, res) => {
 
 // 8. Doctor Specific Endpoints
 exports.doctorAppointments = async (req, res) => {
-  return res.status(200).json({ success: true, appointments: mockAppointments });
+  return res.status(200).json({ success: true, appointments: sharedStore.getAppointments() });
 };
 
 exports.doctorCompleteAppointment = async (req, res) => {
   const { appointmentId } = req.body;
-  const item = mockAppointments.find((a) => a._id === appointmentId);
+  const item = sharedStore.getAppointments().find((a) => a._id === appointmentId);
   if (item) item.isCompleted = true;
   return res.status(200).json({ success: true, message: "Appointment Completed" });
 };
 
 exports.doctorCancelAppointment = async (req, res) => {
   const { appointmentId } = req.body;
-  const item = mockAppointments.find((a) => a._id === appointmentId);
-  if (item) item.cancelled = true;
+  sharedStore.cancelAppointment(appointmentId);
   return res.status(200).json({ success: true, message: "Appointment Cancelled" });
 };
 
@@ -254,9 +139,9 @@ exports.doctorDashboard = async (req, res) => {
     success: true,
     dashData: {
       earnings: 32000,
-      appointments: mockAppointments.length,
+      appointments: sharedStore.getAppointments().length,
       patients: 64,
-      latestAppointments: mockAppointments.slice(0, 5),
+      latestAppointments: sharedStore.getAppointments().slice(0, 5),
     },
   });
 };
