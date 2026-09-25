@@ -49,11 +49,13 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "healthy" });
 });
 
-// Doctors API routes
+// Doctors & Admin API routes
 app.get("/api/doctors", doctorController.getAllDoctors);
 app.get("/api/doctors/:id", doctorController.getDoctorById);
 app.post("/api/doctors", doctorController.createDoctor);
+app.post("/api/doctor/login", doctorController.doctorLogin);
 app.post("/api/doctors/login", doctorController.doctorLogin);
+app.post("/api/admin/login", doctorController.adminLogin);
 app.put("/api/doctors/:id", doctorController.updateDoctor);
 
 // Appointments API routes
